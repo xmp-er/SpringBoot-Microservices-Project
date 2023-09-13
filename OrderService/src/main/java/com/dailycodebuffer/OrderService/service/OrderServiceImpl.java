@@ -1,16 +1,21 @@
 package com.dailycodebuffer.OrderService.service;
 
 import com.dailycodebuffer.OrderService.entity.Order;
+import com.dailycodebuffer.OrderService.exception.CustomException;
 import com.dailycodebuffer.OrderService.external.client.PaymentService;
 import com.dailycodebuffer.OrderService.external.client.ProductService;
 import com.dailycodebuffer.OrderService.external.request.PaymentRequest;
 import com.dailycodebuffer.OrderService.model.OrderRequest;
+import com.dailycodebuffer.OrderService.model.OrderResponse;
 import com.dailycodebuffer.OrderService.repository.OrderRepository;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @Log4j2
@@ -64,5 +69,35 @@ public class OrderServiceImpl implements OrderService{
 
         log.info("Order successfully place with the details {}",od);
         return od.getId();
+    }
+
+    @Override
+    public OrderResponse getOrderDetails(long orderId) {
+        log.info("Get Order Details for Order Id:{}",orderId);
+
+        Order order = orderRepo.findById(orderId).orElseThrow(()->new CustomException("Order Not Found for the order Id:"+orderId,"NOT_FOUND",404));
+
+        OrderResponse orderResponse = new OrderResponse();
+        orderResponse.setAmount(order.getAmount());
+        orderResponse.setOrderStatus(order.getOrderStatus());
+        orderResponse.setOrderId(orderId);
+        orderResponse.setOrderDate(order.getOrderDate());
+
+        return orderResponse;
+    }
+
+    @Override
+    public List<OrderResponse> getAllOrders() {
+
+        log.info("Fetching all the orders");
+
+        List<Order> temp_response= orderRepo.findAll();
+        List<OrderResponse> response=new ArrayList<>();
+        for(var i : temp_response){
+            OrderResponse temp = new OrderResponse();
+            BeanUtils.copyProperties(i,temp);
+            response.add(temp);
+        }
+        return response;
     }
 }
